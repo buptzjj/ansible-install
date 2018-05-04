@@ -23,6 +23,7 @@ function install_python_27(){
         ./configure --prefix=/usr/local
         make --jobs=`grep processor /proc/cpuinfo|wc -l`
         make install
+        cd -
         if [ $? -eq '0' ];then
             logger 'python2.7安装成功'
             cd /usr/local/include/python2.7
@@ -107,12 +108,24 @@ function install_lib(){
         fi
     fi
 }
+# 添加环境变量
+function add_env_path(){
+    echo $PATH|grep /usr/local/bin
+    if [ $? -eq 0 ];then
+        logger '环境变量已存在，跳过配置'
+    else
+        echo 'export PATH=$PATH:/usr/local/bin' >>/etc/profile
+        source /etc/profile
+        logger '添加/usr/local/bin到PATH环境变量'
+    fi
+}
 
 echo '开始安装...'
 echo '安装日志见：'${logDir}${loggerFile}
 install_python_27
 install_python_module 'setuptools'
 install_python_module 'crypto' 'Crypto'
+install_lib 'sshpass'
 install_lib 'yaml'
 install_python_module 'PyYAML' 'yaml'
 install_python_module 'MarkupSafe' 'markupsafe'
@@ -121,6 +134,11 @@ install_python_module 'ecdsa'
 install_python_module 'paramiko'
 install_python_module 'simplejson'
 install_python_module 'ansible'
+add_env_path
+if [ ! -d '/etc/ansible' ];then
+    mkdir /etc/ansible
+fi
+cp ansible.cfg /etc/ansible/
 echo '安装结束...'
 
 
